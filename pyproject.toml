@@ -1,32 +1,46 @@
 # pyproject.toml
 
 [build-system]
-requires = ["setuptools>=61.0", "wheel"] # Specify build dependencies
-build-backend = "setuptools.build_meta"  # Use setuptools as the build backend
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
 
 [project]
-name = "bots_control_panel" # Choose a suitable package name
-version = "1.0.0" # Match the version mentioned in the app
-description = "FastAPI application to control a specific systemd service via HTTP API."
+name = "bots-control-panel"
+version = "1.0.0"
+description = "FastAPI app to control multiple systemd services via HTTP API with unique API keys."
+readme = "README.md"
+requires-python = ">=3.8"
 
 classifiers = [
-    "Development Status :: 4 - Beta", # Or "5 - Production/Stable" when ready
+    "Development Status :: 4 - Beta",
     "Framework :: FastAPI",
     "Intended Audience :: Developers",
     "Intended Audience :: System Administrators",
-    "License :: OSI Approved :: MIT License", # Match the license above
+    "License :: OSI Approved :: MIT License",
     "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Topic :: Database",
     "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
     "Topic :: System :: Systems Administration",
 ]
 
 # --- Core Runtime Dependencies ---
 dependencies = [
-    "fastapi>=0.90.0,<1.0.0",    # Core web framework
-    "uvicorn[standard]>=0.18.0,<1.0.0", # ASGI server with performance extras
-    "python-dotenv>=0.20.0,<2.0.0", # For loading .env files (used in example)
-    # Add other runtime dependencies here if any
+    "fastapi>=0.100.0,<1.0.0",
+    "uvicorn[standard]>=0.20.0,<1.0.0",
+    "sqlalchemy>=2.0.0,<3.0.0",
+    "pydantic>=2.0.0,<3.0.0",
+    "python-dotenv>=1.0.0,<2.0.0",
+    "psycopg2-binary>=2.9.0,<3.0.0"
+]
+
+# --- Optional Dependencies ---
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0,<9.0.0",
+    "httpx>=0.24.0,<1.0.0",
+    "ruff",
 ]
