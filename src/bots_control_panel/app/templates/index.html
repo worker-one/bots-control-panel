@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Use the service_name passed from the backend -->
+    <title>Control Service: {{ service_name }}</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; max-width: 700px; margin: auto; background-color: #f4f4f4; }
+        .container { background-color: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #333; word-break: break-all; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; }
+        input[type="password"], button {
+            padding: 12px;
+            margin-bottom: 18px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box; /* Include padding in width */
+        }
+        input[type="password"] { width: 100%; }
+        .button-group { text-align: center; margin-bottom: 20px; }
+        button {
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            margin: 5px;
+            min-width: 80px;
+            transition: background-color 0.2s ease;
+        }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #aaa; cursor: not-allowed; }
+        #result {
+            margin-top: 25px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            background-color: #e9e9e9;
+            border-radius: 4px;
+            white-space: pre-wrap; /* Preserve formatting */
+            word-wrap: break-word;
+            font-family: monospace;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .error { color: #d9534f; border-left: 5px solid #d9534f; background-color: #f2dede; }
+        .success { color: #5cb85c; border-left: 5px solid #5cb85c; background-color: #dff0d8;}
+        .info { color: #31708f; border-left: 5px solid #31708f; background-color: #d9edf7;}
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Service name is now dynamic -->
+    <h1>Control Service:<br><code>{{ service_name }}</code></h1>
+
+    <div>
+        <label for="apiKey">API Key for {{ service_name }}:</label>
+        <input type="password" id="apiKey" name="apiKey" required placeholder="Enter API Key">
+    </div>
+
+    <div class="button-group">
+        <button id="btn-start" onclick="controlService('start')">Start</button>
+        <button id="btn-stop" onclick="controlService('stop')">Stop</button>
+        <button id="btn-restart" onclick="controlService('restart')">Restart</button>
+        <button id="btn-status" onclick="controlService('status')">Status</button>
+    </div>
+
+    <div id="result" class="info">Enter the API Key for this service and click an action.</div>
+</div>
+
+<script>
+    const apiKeyInput = document.getElementById('apiKey');
+    const resultDiv = document.getElementById('result');
+    const buttons = document.querySelectorAll('.button-group button');
+
+    // Get the service name from the path or title (using template variable is robust)
+    const serviceName = "{{ service_name }}"; // Injected by Jinja2
+
+    function setLoadingState(isLoading) {
+        buttons.forEach(button => button.disabled = isLoading);
+        resultDiv.textContent = isLoading ? `Processing request...` : resultDiv.textContent;
+        if (isLoading) {
+            resultDiv.className = 'info'; // Reset to info while loading
+        }
+    }
+
+    async function controlService(action) {
+        const apiKey = apiKeyInput.value;
+        if (!apiKey) {
+            resultDiv.textContent = 'Error: API Key is required.';
+            resultDiv.className = 'error';
+            return;
+        }
+        if (!serviceName) {
+             resultDiv.textContent = 'Error: Could not determine service name.';
+             resultDiv.className = 'error';
+             return;
+        }
+
+        setLoadingState(true);
+
+        // Construct the API endpoint URL dynamically
+        const apiUrl = `/api/services/${encodeURIComponent(serviceName)}/${action}`;
+        console.log(`Calling API: ${apiUrl}`);
+
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'X-API-Key': apiKey,
+                    'Accept': 'application/json'
+                }
+            });
+
+            // Try parsing JSON even if response is not ok, API might return error details
+            const data = await response.json();
+
+            if (!response.ok) {
+                // Use the error detail from the API response if available
+                const errorMessage = data.detail || `Request failed with status ${response.status}`;
+                console.error(`API Error (${response.status}):`, errorMessage, data);
+                throw new Error(errorMessage);
+            }
+
+            // Success
+            console.log('API Success:', data);
+            resultDiv.textContent = `Action: ${data.action}\nStatus: ${data.success ? 'Success' : 'Failed'}\nMessage: ${data.message}\n\nDetails:\n${data.details || '(No further details)'}`;
+            resultDiv.className = data.success ? 'success' : 'error'; // Style based on API success field
+
+        } catch (error) {
+            console.error('Fetch/Processing Error:', error);
+            resultDiv.textContent = `Error: ${error.message}`;
+            resultDiv.className = 'error';
+        } finally {
+            setLoadingState(false);
+        }
+    }
+</script>
+
+</body>
+</html>
